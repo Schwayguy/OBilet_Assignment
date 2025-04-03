@@ -1,0 +1,106 @@
+@model OBilet_Assignment.Models.JourneysModel.JourneysForView
+@{
+    ViewBag.Title = "Journey";
+}
+
+<style>
+    .item-container {
+        display: flex;
+        align-items: center;
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        color: #2F4EB4;
+        background-color: white;
+        justify-content: space-between;
+        cursor: pointer;
+    }
+
+    .item-container .h4 {
+        margin: 0;
+        float: left;
+        color: #192289;
+    }
+
+    .item-container .p {
+        margin: 0;
+        float: left;
+        color: #192289;
+    }
+
+    .item-container .price {
+        margin: 0;
+        float: right;
+        background-color: #D23B38;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+    }
+
+    .blue {
+        background: #2F4EB4;
+        color: white;
+    }
+
+    .item-container .p1 {
+        margin: 0;
+        float: left;
+        color: #083145;
+    }
+
+    .text-center {
+        color: #2F4EB4;
+    }
+</style>
+
+<div class="container mt-5">
+    <button id="back-btn" class="btn btn-danger mt-3">Back</button>
+    <div class="container d-flex justify-content-center align-items-center">
+        <div class="text-center">
+            <h1>@Model.OriginLocation -> @Model.DestinationLocation</h1>
+            <p class="fs-5">@Model.DepartureDate</p>
+        </div>
+    </div>
+
+    <div class="container mt-4">
+        @if (ViewData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger text-center" role="alert">
+                @ViewData["ErrorMessage"]
+            </div>
+        }
+        @if (Model.Journeys != null)
+        {
+            foreach (var item in Model.Journeys)
+            {
+                <div class="mb-3" id="rowitems">
+                    <div class="item-container" id="item">
+                        <div>
+                            <p>KALKIŞ - VARIŞ</p>
+                            <h4>@item.departure.ToString("hh:mm") -> @item.arrival.ToString("hh:mm")</h4>
+                            <br>
+                            <p1>@item.origin -> @item.destination</p1>
+                        </div>
+                        <span class="price">@String.Format("{0:0.00}", item.originalprice) TL</span>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#back-btn').click(function () {
+            window.location.href = '@Url.Action("Index", "Home")'
+        });
+
+        //make journeys clickable and change color on click
+        $(".item-container").bind("click", function (e) {
+            $(".item-container").removeClass("blue");
+            if (e.target.className === "item-container")
+                $(e.target).addClass("blue");
+        })
+    });
+</script>

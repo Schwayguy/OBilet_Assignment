@@ -1,0 +1,283 @@
+﻿@{
+    ViewBag.Title = "Index";
+}
+@model OBilet_Assignment.Models.LocationsModel.LocationsForView;
+<style>
+    .form-control {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        margin-bottom: 10px;
+        color: #2F4EB4;
+        background-color: white;
+        justify-content: space-between;
+        cursor: pointer;
+    }
+
+    .label {
+        margin: 0;
+        float: left;
+        color: #192289;
+    }
+
+    .date-area {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .datePicker {
+        float: right;
+    }
+
+    .radio-group {
+        margin-left: 10px;
+        float: left;
+    }
+
+    .swap-btn {
+        background-color: #2F4EB4;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-bottom: 10px;
+    }
+
+    .swap-btn:hover {
+        color: #2F4EB4;
+        background-color: white;
+    }
+
+    .btn-primary {
+        background-color: #2F4EB4;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        color: #2F4EB4;
+        background-color: white;
+    }
+
+    .mb-3 {
+        margin-bottom: 1rem;
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="container mt-4">
+        <form>
+            <div class="mb-3">
+                <label for="originInputGroup" class="form-label">Nereden:</label>
+                <select id="comboBoxOrigin" class="form-control">
+                    @foreach (var item in Model.OriginLocations)
+                    {
+                        <option value="@item.id">@item.longname</option>
+                    }
+                </select>
+            </div>
+            <button type="button" class="btn btn-light mx-2 swap-btn" id="swapBtn">
+                <i class="bi bi-arrow-left-right"></i>
+            </button>
+            <div class="mb-3">
+                <label for="comboBoxDestination" class="form-label">Nereye:</label>
+                <select id="comboBoxDestination" class="form-control">
+                    @foreach (var item in Model.DestinationLocations)
+                    {
+                        <option value="@item.id">@item.longname</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="datePicker" class="form-label">Tarih:</label>
+                <div class="date-area">
+
+                    <input type="text" id="datePicker" class="form-control">
+
+                    <div class="radio-group">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="option" id="todayRadio"
+                                value="todayOption">
+                            <label class="form-check-label" for="todayRadio">Bugün</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="option" id="tomorrowRadio"
+                                value="tomorrowOption" checked>
+                            <label class="form-check-label" for="tomorrowRadio">Yarın</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" id="submitBtn" class="btn btn-primary">Biletini Bul</button>
+
+            @if (ViewData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger text-center" role="alert">
+                    @ViewData["ErrorMessage"]
+                </div>
+            }
+        </form>
+    </div>
+</div>
+@section scripts {
+    <script>
+        $(document).ready(function () {
+
+            var tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1); // Add 1 day
+
+            // Initialize Datepicker with Turkish language
+            $("#datePicker").datepicker({
+                format: "dd MM yyyy DD",
+                autoclose: true,
+                todayHighlight: true,
+                language: "tr",
+                startDate: new Date()
+            }).datepicker("setDate", tomorrow);
+
+            var departureDate = "@Model.JourneysForView.DepartureDate";
+            var origin = "@Html.Raw(Model.JourneysForView.OriginLocation)";
+            var destination = "@Html.Raw(@Model.JourneysForView.DestinationLocation)";
+            var originId = "@Model.JourneysForView.OriginId";
+            var destinationId = "@Model.JourneysForView.DestinationId";
+
+            if (departureDate.trim() !== "") {
+                var date = new Date(departureDate);
+                $("#datePicker").datepicker("setDate", date);
+            }
+
+            let originSelect = new TomSelect("#comboBoxOrigin", {
+                valueField: "id",
+                labelField: "name",
+                searchField: "name",
+                create: false,
+                load: function (query, callback) {
+                    if (!query.length) {
+                        originSelect.clearOptions(); // Clear previous options
+                        return callback();
+                    }
+
+                    $.post("/Home/ComboChanged", { searchText: query }, function (response) {
+                        originSelect.clearOptions(); // Remove old items
+                        response.forEach(item => {
+                            originSelect.addOption({ id: item.id, name: item.longname });
+                        });
+                        originSelect.refreshOptions(); // Refresh the dropdown UI
+                        callback(response);
+                    });
+
+                }
+            });
+
+            let destinationSelect = new TomSelect("#comboBoxDestination", {
+                valueField: "id",
+                labelField: "name",
+                searchField: "name",
+                create: false,
+                load: function (query, callback) {
+                    if (!query.length) {
+                        destinationSelect.clearOptions(); // Clear previous options
+                        return callback();
+                    }
+
+                    $.post("/Home/ComboChanged", { searchText: query }, function (response) {
+                        destinationSelect.clearOptions(); // Remove old items
+                        response.forEach(item => {
+                            destinationSelect.addOption({ id: item.id, name: item.longname });
+                        });
+                        destinationSelect.refreshOptions(); // Refresh the dropdown UI
+                        callback(response);
+                    });
+
+                }
+            });
+            // Listen for radio button change
+            $("input[name='option']").change(function () {
+                if ($("#todayRadio").is(":checked")) {
+                    $("#datePicker").datepicker("setDate", new Date());
+                } else if ($("#tomorrowRadio").is(":checked")) {
+                    $("#datePicker").datepicker("setDate", tomorrow);
+                }
+            });
+
+            //If Razor Model includes origin/destination info, set the values in the comboBoxes
+            if (destination.trim() !== "") {
+                destinationSelect.addOption({ id: destinationId, name: destination });
+                destinationSelect.setValue(destinationId);
+            }
+            if (origin.trim() !== "") {
+                originSelect.addOption({ id: originId, name: origin });
+                originSelect.setValue(originId);
+            }
+
+
+            // Swap button click to swap values between comboBoxes
+            $("#swapBtn").click(function () {
+                let value1 = originSelect.getValue();
+                let value2 = destinationSelect.getValue();
+
+                // Check if the values exist in the respective dropdowns before swapping
+                if (value1) {
+                    let selectedOption1 = originSelect.options[value1];
+                    destinationSelect.addOption(selectedOption1);
+                    destinationSelect.setValue(value1);
+                }
+
+                if (value2) {
+                    let selectedOption2 = destinationSelect.options[value2];
+                    originSelect.addOption(selectedOption2);
+                    originSelect.setValue(value2);
+                }
+
+                originSelect.refreshOptions(false);
+                destinationSelect.refreshOptions(false);
+
+                // Trigger the initial AJAX load for both dropdowns
+                originSelect.load();
+                destinationSelect.load();
+            });
+
+
+            // Handle button click
+            $("#submitBtn").click(function () {
+
+                let originId = originSelect.getValue();
+                let destinationId = destinationSelect.getValue();
+                var origin = originSelect.options[originId].name;
+                var destination = destinationSelect.options[destinationId].name;
+
+                var selectedDate = $("#datePicker").data('datepicker').getFormattedDate('yyyy-mm-dd');
+
+                let value1 = originSelect.getValue();
+                let value2 = destinationSelect.getValue();
+
+                if (value1 === value2) {
+                    alert("Gidiş ve varış noktaları aynı olamaz.");
+                    return;
+                }
+                if (new Date(selectedDate).getDate() < new Date().getDate()) {
+                    alert("Yolculuk tarihi bugünden önce olamaz.");
+                    return;
+                }
+
+                $.post("/Home/GoToJourney", { origin: origin, destination: destination, departuredate: selectedDate, originId: originId, destinationId: destinationId }, function (response) {
+                    window.location.href = '@Url.Action("Journey", "Home")'
+                });
+
+            });
+        });
+
+    </script>
+
+}
